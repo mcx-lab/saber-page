@@ -1,0 +1,33 @@
+# SABER: Learning Attention-based Semantic Affordance for Legged Locomotion
+
+> A planner-free reinforcement-learning locomotion policy for quadruped robots that jointly reasons about terrain geometry and semantic contact permission — where the robot *can* step versus where it *should* — and is validated zero-shot on a Unitree B2 indoors and outdoors.
+
+- Authors: Hari Prasanth Palanivelu, Samuel Sze, Kennard Garrison Johannes, Albertus Hendrawan Adiwahono, Meng Yee (Michael) Chuah
+- Affiliation: Institute of Advanced Intelligence and Computing (IAIC), Agency for Science, Technology and Research (A*STAR), Singapore
+- arXiv: https://arxiv.org/abs/2609.21572 (arXiv:2609.21572, cs.RO, first posted 18 September 2026)
+- PDF: https://arxiv.org/pdf/2609.21572
+- Project page: https://mcx-lab.github.io/saber-page/
+- Overview video: https://youtu.be/i8_pRJMN7OY
+- Code: not released (industry project)
+
+## Problem
+Perceptive legged locomotion integrates terrain geometry into learned policies, but not terrain meaning. A pipe, a patch of grass, or a fragile cardboard box can be geometrically steppable yet inappropriate for contact. Existing systems handle this above the controller (semantic navigation / traversability maps route around flagged regions) while the low-level policy stays geometric, so a foot that must cross a forbidden region is placed without knowing it is forbidden.
+
+## Method
+- Terrain-affordance map: a 41x21 yaw-aligned grid at 0.05 m resolution (2.0 m x 1.0 m) where each cell holds local 3D geometry (x, y, z) and a semantic contact cost r (0 = permitted, 1 = flagged / forbidden contact).
+- A lightweight CNN tokenizes the four-channel map into 231 terrain tokens (64-d); a single proprioceptive query attends over them with eight heads of dimension eight (cross-attention).
+- Structured semantic attention bias: an additive term on the attention logits, B_{h,i} = beta_h * rho_h(d_i) * r_i, where beta_h is a signed per-head gain, rho_h a learned six-point radial profile of the distance d_i from the cell to its nearest foot, and r_i the max-pooled contact cost. It is a bias, not a mask; the entire semantic module is eight gains and eight profiles, so the learned behaviour is inspectable.
+- Training: PPO (mjlab), asymmetric actor-critic, 4096 parallel environments, 23k iterations, ~34 h on one NVIDIA H200, 50 Hz policy, joint-position targets tracked by PD control. Semantic reward terms penalise foot-flagged and shank-flagged contact.
+- Training terrains decorrelate geometry from permission: rough terrain, pipes, rails, semantic stepping stones, lava tiles and concentric grass rings; flagged and safe pipes/rails/stones share identical geometry so only the cost channel distinguishes them.
+
+## Key results
+- Architecture ablation (5 evaluation terrains, 256 robots each, 10 seeds; contacts = flagged-terrain contact events per episode): SABER 1.04 contacts, 0.185 m/s velocity error, 0.908 success, 6.15 m distance. Without the semantic bias: 1.61 contacts (+55%), velocity error and success unchanged. Without the cost channel entirely: 13.51 contacts (13x).
+- On the three terrains where flagged and safe ground are geometrically identical (semantic stepping stones, grass rings, lava tiles), contacts drop from 1.26/2.33/2.29 (no bias) to 0.68/1.52/1.34 (SABER).
+- Learned bias: most heads suppress flagged terrain, one emphasises it near the foot; the strongest reaches about -9 logits at 0.45 m and decays to zero beyond ~1 m; the bias shifts ~3 percentage points of attention mass away from flagged cells on every terrain.
+- Hardware (Unitree B2, all perception/mapping/policy onboard; RoboSense Helios-32 LiDAR with Direct LiDAR Odometry, two RoboSense Airy LiDARs for elevation mapping, Intel RealSense D435i RGB; YOLO26s-seg fine-tuned on ~6,000 images; elevation_mapping_cupy multi-modal 2.5D map; one checkpoint, no per-scene tuning): steps on concrete rails while avoiding flagged cardboard boxes of similar height; crosses a 30 cm pipe with foot and shank in both directions; avoids turf patches moving forward, backward and sideways; crosses three parallel low pipes (tallest 11 cm); outdoors keeps feet on tiles with grass gaps (the same policy steps onto grass when segmentation is disabled), crosses a pipe on a timber deck, and walks along an irregular grass boundary while keeping all feet on the pavement.
+
+## Limitations
+Deployment perception (projecting 2D segmentation into a 2.5D map is sensitive to alignment, map drift and prediction errors) and the soft nature of the learned constraint (a sufficiently strong velocity command can still drive the policy through flagged terrain when no permitted path exists).
+
+## Citation
+Palanivelu, H. P., Sze, S., Johannes, K. G., Adiwahono, A. H., & Chuah, M. Y. (2026). SABER: Learning Attention-based Semantic Affordance for Legged Locomotion. arXiv:2609.21572.

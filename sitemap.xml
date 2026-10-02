@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  <url>
+    <loc>https://mcx-lab.github.io/saber-page/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <image:image><image:loc>https://mcx-lab.github.io/saber-page/static/fig1_hero.jpg</image:loc><image:title>SABER: Unitree B2 crossing a flagged pipe without touching it</image:title></image:image>
+    <image:image><image:loc>https://mcx-lab.github.io/saber-page/static/fig2_framework.png</image:loc><image:title>SABER architecture overview</image:title></image:image>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/i8_pRJMN7OY/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>SABER: Learning Attention-based Semantic Affordance for Legged Locomotion</video:title>
+      <video:description>Overview video: motivation, method, simulation ablations and Unitree B2 hardware results.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/i8_pRJMN7OY</video:player_loc>
+    </video:video>
+  </url>
+  <url><loc>https://mcx-lab.github.io/saber-page/llms.txt</loc><lastmod>2026-10-02</lastmod></url>
+</urlset>
