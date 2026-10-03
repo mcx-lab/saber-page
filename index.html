@@ -530,6 +530,21 @@
 
 <script>
 (function(){
+  // Clips play only while on screen. Every clip still starts loading with the page, and an off-screen clip is paused
+  // only once its first frames are in, so it resumes instantly when scrolled back into view.
+  function sync(v){
+    if(v._held) return;                                    // currently shown in the enlarged player
+    if(v._vis!==false){ var p=v.play(); if(p&&p.catch)p.catch(function(){}); }
+    else if(v.readyState>=2) v.pause();
+  }
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){ es.forEach(function(e){ e.target._vis=e.isIntersecting; sync(e.target); }); },{rootMargin:'200px 0px'});
+    [].slice.call(document.querySelectorAll('.card .media video, .attn video, .sim video')).forEach(function(v){
+      v.addEventListener('loadeddata',function(){ sync(v); });
+      io.observe(v);
+    });
+  }
+
   var tiles=[].slice.call(document.querySelectorAll('.card .media, .attn.media'));
   var lb=document.getElementById('lightbox'), stage=lb.querySelector('.lb-stage'), cap=lb.querySelector('.lb-cap');
   var open=null; // {tiles:[video,...], big:[video,...]}
@@ -557,7 +572,7 @@
     var t=m.querySelector('video').currentTime;
     stage.textContent=''; cap.textContent='';
     var big=srcTiles.map(function(tv,i){
-      tv.pause();
+      tv._held=true; tv.pause();
       var item=document.createElement('div'); item.className='lb-item';
       var v=document.createElement('video');
       v.muted=true; v.loop=true; v.playsInline=true; v.preload='auto';
@@ -593,7 +608,7 @@
     if(!open) return;
     var t=open.big[0].currentTime;
     open.big.forEach(function(v){v.pause(); v.removeAttribute('src'); v.load();});
-    open.tiles.forEach(function(tv){ try{tv.currentTime=t;}catch(e){} var p=tv.play(); if(p&&p.catch)p.catch(function(){}); });
+    open.tiles.forEach(function(tv){ try{tv.currentTime=t;}catch(e){} tv._held=false; sync(tv); });
     stage.textContent=''; open=null;
   }
   lb.addEventListener('close',done);
